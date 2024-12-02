@@ -11,14 +11,17 @@ class Library:
     def __init__(self):
         self.books = []
         self.next_id = 1
+        self.load_books()
 
     def add_book(self, title, author, year):
         book = Book(self.next_id, title, author, year)
         self.books.append(book)
         self.next_id += 1
+        self.save_books()
 
     def remove_book(self, book_id):
         self.books = [book for book in self.books if book.id != book_id]
+        self.save_books()
 
     def search_book(self, request):
         result = [book for book in self.books if request.lower() in (book.title.lower() or book.author.lower() or str(book.year))]
@@ -32,7 +35,25 @@ class Library:
         for book in self.books:
             if book in self.books:
                 book.status = new_status
+                self.save_books()
                 break
+
+    def save_books(self):
+        with open('library.txt', 'w', encoding='utf-8') as f:
+            for book in self.books:
+                f.write(f'{book.id}|{book.title}|{book.author}|{book.year}|{book.status}\n')
+
+    def load_books(self):
+        try:
+            with open('library.txt', 'r', encoding='utf-8') as f:
+                for line in f:
+                    book_id, title, author, year, status = line.strip().split('|')
+                    book = Book(int(book_id), title, author, int(year))
+                    book.status = status
+                    self.books.append(book)
+                self.next_id = max(book.id for book in self.books) + 1 if self.books else 1
+        except FileNotFoundError:
+            self.books = []
 
 def main():
     library = Library()
@@ -59,6 +80,7 @@ def main():
             library.display_books()
         elif action == 6:
             break
+
 
 if __name__ == '__main__':
     main()
